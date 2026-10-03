@@ -5,6 +5,24 @@ All notable changes to this repository are documented here. The format follows
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html). See the README,
 section "Versioning", for what MAJOR / MINOR / PATCH mean here.
 
+## [0.1.7]
+
+### Changed
+
+- Dart Conventions → *Date and Number Formatting*: the interface's language
+  reaches `intl` through the `ApplicationLocale` widget of `application_base`
+  0.5.0, wrapped around the application in `MaterialApp.builder`, not through
+  `ApplicationLocale.resolve` as `localeListResolutionCallback`. Flutter calls
+  that callback for the system languages and for `MaterialApp.locale` alike,
+  so in an application with its own language setting a change of the system
+  languages handed `intl` the system's language while the interface stayed in
+  the chosen one; 0.5.0 removes it. The widget reads the locale from
+  `Localizations`, whatever chose it. Widget tests wrap their `MaterialApp` in
+  the same widget.
+- Dart Conventions → *Navigation*: the global helpers outside the
+  `NavigationServicePro` contract name `pushPath` instead of `pushNamed`,
+  which `application_base` 0.5.0 removes.
+
 ## [0.1.6]
 
 ### Added

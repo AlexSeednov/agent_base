@@ -156,21 +156,27 @@ tests). `@lazySingleton` — lazy, `@singleton` — eager; registration is codeg
 - The global functions are the low-level layer: they are called by the
   `NavigationServiceRouter` implementation, by guards, and by one-off navigation in
   widgets, plus whatever is not in the contract (`unfocus`, `actualContext`,
-  `actualRouter`, `pushNamed`, `navigatePath`). Do not use them from a VM.
+  `actualRouter`, `pushPath`, `navigatePath`). Do not use them from a VM.
 
 ## Date and Number Formatting
 
 - Format through `intl` (`DateFormat`, `NumberFormat`) **without a locale
-  argument**. The language comes from `ApplicationLocale.resolve`
-  (`application_base`), wired once as `localeListResolutionCallback` of the
-  root `MaterialApp`: it makes the interface's locale the default of `intl`.
+  argument**. The language comes from the `ApplicationLocale` widget
+  (`application_base` 0.5.0), wrapped once around the application in
+  `MaterialApp.builder`: it makes the locale the interface is drawn in the
+  default of `intl`, whether the system chose it or `MaterialApp.locale` did.
+- Not `ApplicationLocale.resolve` as `localeListResolutionCallback` — the
+  0.4.x wiring, removed in 0.5.0. Flutter calls that callback for the system
+  languages and for `MaterialApp.locale` alike, so in an application with its
+  own language setting a change of the system languages handed `intl` the
+  system's language while the interface stayed in the chosen one.
 - Never pin a locale into a call (`DateFormat('d MMMM', 'ru')`) and never set
   `Intl.systemLocale` "for correct formatting". The pin hides the bug and has to
   be undone for each language added; the system locale *is* the bug —
   formatters then speak the device's language, not the interface's.
-- A widget test that checks formatted text wires the same callback into its
-  own `MaterialApp` (or sets `Intl.defaultLocale` in `setUp`), otherwise it
-  formats in `en_US`.
+- A widget test that checks formatted text wraps its own `MaterialApp` in the
+  same widget (or sets `Intl.defaultLocale` in `setUp`), otherwise it formats
+  in `en_US`.
 
 ## Error Handling
 
