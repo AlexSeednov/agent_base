@@ -107,7 +107,13 @@ The pinned Flutter version is defined in `.fvmrc` at the project root. The corre
 
 ### Web builds
 
-Every `flutter build web` on this stack carries **`--no-web-resources-cdn`**. By default Flutter loads the CanvasKit engine (and its fallback fonts) from `gstatic.com`, so the IP address of every visitor reaches Google's servers — a cross-border transfer that the operators' Roskomnadzor records declare absent. The flag bundles the engine next to the app. The same rule covers anything else the page would fetch from abroad: fonts are local assets (no runtime `google_fonts`, no Google Fonts `<link>`), and the CSP must not allow `gstatic.com` or `fonts.googleapis.com` — a foreign host allowed there is a sign that something still loads from it. Put the flag everywhere a web build is spelled out: README, Dockerfiles, CI, deploy scripts.
+A web page on this stack fetches nothing from Google's servers. Out of the box a Flutter web app does, so the IP address of every visitor reaches Google — a cross-border transfer that the operators' Roskomnadzor records declare absent. Three things go there by default, and each is closed separately:
+
+- **The CanvasKit engine**, from `www.gstatic.com`. Every `flutter build web` carries **`--no-web-resources-cdn`**, which bundles the engine next to the app. Put the flag everywhere a web build is spelled out: README, Dockerfiles, CI, deploy scripts.
+- **The fonts the engine loads by itself**: the default Roboto, and the Noto fonts for any character the app's own fonts lack — emoji, symbols, other scripts (a chat shows whatever its users type). They come from `fonts.gstatic.com` through `fontFallbackBaseUrl`, and **the flag does not cover them**. Mirror them on the app's own origin and point `fontFallbackBaseUrl` there from `web/flutter_bootstrap.js`. The file list lives in the engine sources (`font_fallback_data.dart`, plus the Roboto URL in each renderer's font code) and changes between Flutter versions, so fetch it with a script that reads the SDK it runs on, as a step of the image build — a hand-copied mirror goes stale with the next upgrade.
+- **The Firebase JS SDK**, which `Firebase.initializeApp` injects from `www.gstatic.com` on the web. Don't initialize Firebase on the web unless the app needs it there. A CSP that blocks the SDK does not make the initialization fail: it never completes, and an app that awaits it hangs at start.
+
+The same rule covers anything else the page would fetch from abroad: the app's own fonts are local assets (no runtime `google_fonts`, no Google Fonts `<link>`). The CSP allows no Google host — neither `gstatic.com` nor `fonts.googleapis.com`. A foreign host allowed there is a sign that something still loads from it; without it, the browser reports every such attempt in the console.
 
 ## Figma
 
