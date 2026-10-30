@@ -10,7 +10,7 @@ project/
 ├── lib/
 │   ├── core/       # Base services and data — available to ALL layers
 │   ├── data/       # Data sources (API, DB) — implements domain interfaces
-│   ├── domain/     # Business logic — pure Dart, no Flutter imports
+│   ├── domain/     # Business logic — no Flutter UI dependencies
 │   ├── presentation/ # UI — views, view models, navigation
 │   └── theme/      # Styling — colors, fonts, sizes, assets
 ├── pigeon/         # API definitions for Pigeon (platform channels)
@@ -19,7 +19,9 @@ project/
 └── pubspec.yaml
 ```
 
-**Entry points (flavors):** `main_development.dart`, `main_stage.dart`, `main_production.dart`.
+**Entry points:** inspect the consuming project. A project may have one
+`main.dart`, or flavors such as `main_development.dart`, `main_stage.dart`, and
+`main_production.dart`. Examples do not require a flavored setup.
 
 ## Layer Import Rules
 
@@ -35,7 +37,11 @@ project/
 
 ## Key Principles
 
-1. `domain/` — **pure Dart**: no Flutter SDK (Dart packages like `json_annotation` are allowed).
+1. `domain/` has no Flutter UI dependencies. Entities, repository contracts and
+   business utilities are pure Dart (packages like `json_annotation` are allowed).
+   The stack's model-state convention uses `ValueNotifier` from
+   `package:flutter/foundation.dart`; that is the explicit exception for models,
+   not permission to import widgets, Material, or presentation types.
 2. Data layer implements domain interfaces; binding via `@LazySingleton(as: Interface)` + codegen — never register manually.
 3. Presentation never accesses the data layer directly.
 4. All assets — via generated constants (`lib/theme/asset/`), never via raw paths.
@@ -54,16 +60,18 @@ void main() => launchApplication(
 );
 ```
 
-`launchApplication()` from `application_base` initializes the Service Locator, Firebase, and launches the app. `AppWidget` and `FlavorProduction` are examples; each project has its own names.
+This is an example for a flavored project. Follow the actual bootstrap API and
+initialization order in the consuming project and its pinned `application_base`
+version. Initialize optional SDKs only when the project uses them.
 
 ## Build and Codegen
 
 ```bash
-dart run build_runner build
+fvm dart run build_runner build
 ```
 
 `build_runner` 2.15+ deletes conflicting outputs by itself; on an older version add `--delete-conflicting-outputs`.
 
 - Localization: add strings to ARB files in `lib/domain/localization/`.
 - Assets: auto-generated in `lib/theme/asset/` via `flutter_gen_runner`.
-- Pigeon: `dart run pigeon --input pigeon/<name>_api.dart`.
+- Pigeon, if used: `fvm dart run pigeon --input pigeon/<name>_api.dart`.

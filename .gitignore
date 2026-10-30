@@ -1,0 +1,10 @@
+.DS_Store
+node_modules/
+coverage/
+.env
+.env.*
+!.env.example
+CLAUDE.local.md
+.claude/settings.local.json
+.agents/local.md
+.mcp.json

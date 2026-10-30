@@ -4,13 +4,13 @@
     "name": "Alex Seednov"
   },
   "metadata": {
-    "description": "Shared Claude Code configuration for Flutter/Dart clean-architecture projects."
+    "description": "Agent Base: shared Flutter/Dart conventions and workflows for Claude Code and Codex."
   },
   "plugins": [
     {
       "name": "flutter-base",
-      "source": "./plugin",
-      "description": "Test skills (unit, widget, integration, test doubles, coverage), a refactor-audit skill, and cross-platform Telegram notification hooks for the Flutter/Dart stack.",
+      "source": "./",
+      "description": "Unit, widget and integration testing, refactor audits, and optional Telegram notifications for the Flutter/Dart stack.",
       "category": "development",
       "keywords": ["flutter", "dart", "testing"]
     }

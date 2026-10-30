@@ -6,7 +6,7 @@ The foundation, available to all layers. **Does not import any other layer.**
 
 - `service/` — Service Locator (`service_locator.dart` + `service_locator.config.dart`), logging, SDK initialization.
 - `pigeon/` — generated platform channel bindings. **Never edit manually.**
-- `const/` — global constants (enums, static values shared across all layers).
+- `const/` — static values shared across all layers. Enums live in `enum/` at the owning level.
 - `utility/`, `mixin/` — shared helpers and mixins.
 
 The logger interface and its base implementation live here. The concrete remote implementation (e.g., Crashlytics) lives in `data/`, bound via Service Locator. Custom exceptions used by multiple layers also go here.
@@ -15,7 +15,11 @@ The logger interface and its base implementation live here. The concrete remote 
 
 ## Domain Layer (`lib/domain/`)
 
-Pure Dart. No Flutter imports. Only `core`. Dart packages (`json_annotation`, `hive_ce`, `rxdart`) are allowed.
+Business logic with no Flutter UI dependencies. Imports only `core` among the
+application layers. Entities, contracts, and utilities are pure Dart; models may
+use `ValueNotifier` through `package:flutter/foundation.dart` as the stack's
+explicit state-management exception. Dart packages (`json_annotation`, `hive_ce`,
+`rxdart`) are allowed.
 
 ### `entity/`
 Simple data classes. No business logic.
@@ -231,7 +235,9 @@ Flutter does **not** generate densities automatically. For **raster** assets (PN
 
 By default do **not** produce `0.5x`/`0.75x`/`1.5x`/`4x` buckets: `0.5`/`0.75` are extinct densities, and `1.5`/`4` Flutter covers with the nearest variant (`2x`/`3x`) plus light scaling. `1x/2x/3x` cover all of iOS and almost all of Android. `4x` is justified only for UI graphics with sharp edges on top-end Android — not for photos/backgrounds.
 
-Export from Figma via MCP (`download_figma_images`), rendering the node at different `pngScale`:
+With a connected community Figma MCP export tool (`download_figma_images`), render
+the node at different `pngScale` values. With another integration, use its
+equivalent render-scale option:
 
 - `pngScale: 1` → base file at the asset folder root (`assets/<...>/image.png`);
 - `pngScale: 2` → `assets/<...>/2.0x/image.png`;
