@@ -29,17 +29,21 @@ transcript_path="$(printf '%s' "$input_json" | jq -r '.transcript_path // empty'
 # and content as an array of blocks where the prompt lives in a `text` block
 # (VSCode extension / newer Claude Code). Tool-result user turns have no text
 # block and are skipped.
+# Read lazily and stop at the first match: the transcript grows by the whole
+# session, and slurping it (`-s`) took longer than the hook timeout on long
+# sessions, so Claude Code killed the hook before it reached `curl`.
 session_name=""
 if [ -n "$transcript_path" ] && [ -f "$transcript_path" ]; then
-  session_name="$(jq -rs '
-    [ .[]
+  session_name="$(jq -rn '
+    first(
+      inputs
       | select(.type == "user")
       | ( if (.message.content | type) == "string"
           then .message.content
           else ([.message.content[]? | select(.type == "text") | .text] | first)
           end )
-      | select(. != null and ((gsub("\\s"; "")) | length) > 0)
-    ] | (first // empty)
+      | select(. != null and test("\\S"))
+    )
   ' "$transcript_path" 2>/dev/null)"
 fi
 

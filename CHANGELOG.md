@@ -5,6 +5,27 @@ All notable changes to this repository are documented here. The format follows
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html). See the README,
 section "Versioning", for what MAJOR / MINOR / PATCH mean here.
 
+## [0.1.8]
+
+### Fixed
+
+- Global → *Web builds*: `--no-web-resources-cdn` bundles CanvasKit only, while
+  the rule said it covered the engine's fallback fonts too. Those — the default
+  Roboto and the Noto fonts for emoji, symbols and other scripts — still come
+  from `fonts.gstatic.com` through `fontFallbackBaseUrl`. The rule now asks to
+  mirror them on the app's own origin, point `fontFallbackBaseUrl` there from
+  `web/flutter_bootstrap.js`, and fetch the file list from the SDK's engine
+  sources at image build time. It also names the Firebase JS SDK, which
+  `Firebase.initializeApp` loads from `www.gstatic.com` on the web: a CSP that
+  blocks it leaves the initialization waiting forever instead of failing.
+- `telegram-notify` on macOS / Unix: the Stop notification stopped arriving
+  from long sessions. The script loaded the whole transcript into `jq` to find
+  the first user prompt, and the transcript grows with the session: past a few
+  dozen megabytes that took longer than the hook's 15-second timeout, Claude
+  Code killed the hook before it reached `curl`, and the transcript recorded
+  no error. It now reads the transcript lazily and stops at the first prompt —
+  about a second for the whole hook on a 320 MB transcript.
+
 ## [0.1.7]
 
 ### Changed
