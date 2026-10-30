@@ -1,113 +1,94 @@
 **English** | [Русский](README.ru.md)
 
-# claude_base
+# agent_base
 
-Shared **Claude Code** configuration for Flutter/Dart clean-architecture
-projects. Kept in one place and reused across projects, so a change is made once
-here instead of being copy-pasted into every repository.
+Shared instructions and workflows for Flutter/Dart projects using Clean Architecture,
+MVVM, getIt/injectable, and ValueNotifier. Claude Code and Codex use the same
+engineering rules and four skills, with separate client adapters. Version **0.2.0**.
 
-The repository plays two roles at the same time:
-
-- a **plugin marketplace** (`claude-base`) that distributes the **`flutter-base`
-  plugin** — test and refactor-audit skills, plus Telegram notification hooks;
-- a store of **always-on instruction files** (`instructions/`) that a project's
-  `CLAUDE.md` pulls in with `@import`.
-
-There are two channels because the contents differ. A plugin distributes
-executable tooling (skills, hooks, commands) and updates cleanly through
-`/plugin update`. Instruction files are always-on context and must be
-`@import`ed into `CLAUDE.md`: a Claude Code plugin does **not** load a
-`CLAUDE.md`, and skills load on demand rather than always. So one repository
-serves both channels, through the two mechanisms described below.
-
-## What is not here
-
-Project-specific configuration stays in each project and is intentionally **not**
-part of this base:
-
-- the project's own `CLAUDE.md`, and any project instruction file it imports
-  (design links, API endpoints, project-only rules);
-- `.claude/settings.local.json` (machine-local, holds secrets such as the
-  Telegram token — see [Telegram hooks](#telegram-hooks));
-- project-specific `settings.json` entries (enabled MCP servers, project-only
-  permission or exclude paths).
-
-## Repository layout
+## Contents
 
 ```text
-claude_base/
-├── .claude-plugin/
-│   └── marketplace.json          # marketplace catalog: lists the flutter-base plugin
-├── plugin/                       # the flutter-base plugin (marketplace "source": "./plugin")
-│   ├── .claude-plugin/
-│   │   └── plugin.json           # plugin manifest (name, version, metadata)
-│   ├── hooks/
-│   │   └── hooks.json            # Stop + PreToolUse hooks, paths via ${CLAUDE_PLUGIN_ROOT}
-│   ├── scripts/                  # hook implementations
-│   │   ├── dispatch.js           # cross-platform launcher (picks .sh on Unix, .ps1 on Windows)
-│   │   ├── telegram-notify.sh    # Stop notification (Unix)
-│   │   ├── telegram-notify.ps1   # Stop notification (Windows)
-│   │   ├── telegram-waiting.sh   # PreToolUse notification (Unix)
-│   │   ├── telegram-waiting.ps1  # PreToolUse notification (Windows)
-│   │   ├── project-name.sh       # project-name resolver shared by both hooks (Unix)
-│   │   └── project-name.ps1      # project-name resolver shared by both hooks (Windows)
-│   └── skills/                   # auto-discovered when the plugin is installed
-│       ├── dart-add-unit-test/
-│       ├── dart-checks-assertions/
-│       ├── dart-collect-coverage/
-│       ├── flutter-add-widget-test/
-│       ├── flutter-add-integration-test/
-│       ├── flutter-refactor-audit/
-│       └── flutter-test-doubles/
-├── instructions/                 # always-on context, consumed via @import (NOT part of the plugin)
-│   ├── global.md
-│   ├── architecture.md
-│   ├── dart-conventions.md
-│   ├── packages.md
-│   └── layers.md
-├── CHANGELOG.md
-├── LICENSE
-├── README.md
-└── README.ru.md
+agent_base/
+├── .claude/CLAUDE.md     # Imports maintainer instructions
+├── .claude-plugin/       # Claude manifest and legacy marketplace identity
+├── .codex-plugin/        # Codex manifest
+├── .agents/plugins/      # Codex marketplace
+├── instructions/         # Shared rules and task routing
+├── skills/               # Four shared workflows
+├── adapters/             # Client instructions and hook wiring
+├── scripts/              # Portable notifier and package validation
+├── templates/            # Application entrypoints and context template
+├── test/                 # Offline notification tests
+├── AGENTS.md             # Instructions for maintaining this package
+└── CHANGELOG.md          # Package releases
 ```
 
-## Quick start
+The repository root is also the plugin root. Installed skills can read the
+shared `instructions/` inside their own package; no external checkout is assumed
+by a skill. `AGENTS.md` and `.claude/CLAUDE.md` govern maintenance of this
+package, not consuming applications.
 
-Two independent steps per project. Do them once; updates are covered under
-[Updating](#updating).
+Project names, Figma files, API endpoints, deployment history, credentials, and
+personal permissions stay in the consuming project or private local settings.
 
-1. **Install the plugin** (skills + hooks) — once per machine, then enable per
-   project. See [Plugin](#plugin).
-2. **Wire the instructions** into the project's `CLAUDE.md` — see
-   [Instructions](#instructions).
+## Project instructions
 
-## Plugin
+Instructions and the installed plugin are **two independent connections**.
+Application startup files load shared rules; a plugin supplies skills and hooks.
+Installing the plugin alone does not make the rules application-wide.
 
-The `flutter-base` plugin is distributed through the `claude-base` marketplace,
-which is just this git repository.
+Choose a delivery method for the shared instructions:
 
-### Install manually
+- **Vendored subtree:** a self-contained application checkout pinned to a release.
+  Run from the application root after the tag is published:
 
-On each machine, once:
+```bash
+git subtree add --prefix .agents/base \
+  https://github.com/AlexSeednov/agent_base.git v0.2.0 --squash
+```
+
+- **Local source clone:** one checkout per machine, shared by several projects:
+
+```bash
+git clone https://github.com/AlexSeednov/agent_base.git ~/Projects/Packages/agent_base
+```
+
+For a subtree at `.agents/base/`, merge [templates/AGENTS.md](templates/AGENTS.md)
+into the application's `AGENTS.md` and [templates/CLAUDE.md](templates/CLAUDE.md)
+into its `CLAUDE.md`. Create `.agents/project.md` from
+[templates/project.md](templates/project.md). Merge existing entry files rather
+than overwriting their project rules. Use only the entry file for the clients
+you actually use.
+
+For a local clone or an existing `.claude/base/` subtree, adapt only the shared
+base paths in those templates. Use a real absolute clone path in Codex instructions
+and an `@~/Projects/Packages/agent_base/...` import in Claude. Project context
+paths remain relative to the application root.
+
+[instructions/entrypoint.md](instructions/entrypoint.md) requires Global rules
+and Architecture first, then routes Dart, tests, Figma, web, and package tasks
+to their detailed references. Project exceptions override shared conventions.
+Long inventories and historical decisions belong in linked task documents.
+
+Private preferences may live in ignored `.agents/local.md`; the templates
+explicitly request it when present. Claude can also use `CLAUDE.local.md`.
+`AGENTS.override.md` replaces that directory's entry file; it is not an additive
+local-preferences file. Keep automatically loaded Codex instructions below its
+default 32 KiB discovery limit. Start a new session after changing startup files.
+
+## Claude Code
+
+The marketplace remains **`claude-base`** and the plugin remains
+**`flutter-base@claude-base`**, preserving existing identifiers after the repository
+rename. Fresh installation:
 
 ```text
-/plugin marketplace add https://github.com/AlexSeednov/claude_base.git
+/plugin marketplace add https://github.com/AlexSeednov/agent_base.git
 /plugin install flutter-base@claude-base
 ```
 
-`/plugin marketplace add` registers the catalog; `/plugin install` fetches the
-plugin into the local plugin cache. Marketplace registration is per user (stored
-in `~/.claude/plugins/known_marketplaces.json`), so it covers every project on
-that machine.
-
-The repository is public, so no authentication is needed. A private repository
-would work the same way, cloned with your existing git credentials.
-
-### Enable automatically for a project (recommended, team-ready)
-
-Commit this to the project's `.claude/settings.json` so anyone who trusts the
-project folder is prompted to add the marketplace and gets the plugin enabled
-automatically:
+To recommend and enable it in an application's `.claude/settings.json`, merge:
 
 ```json
 {
@@ -115,7 +96,7 @@ automatically:
     "claude-base": {
       "source": {
         "source": "github",
-        "repo": "AlexSeednov/claude_base"
+        "repo": "AlexSeednov/agent_base"
       }
     }
   },
@@ -125,327 +106,192 @@ automatically:
 }
 ```
 
-`enabledPlugins` keys the plugin by its `name@marketplace` identifier. Do not
-rename the plugin or marketplace afterwards — that key is how every install
-references it.
+The Claude manifest selects [adapters/claude/hooks.json](adapters/claude/hooks.json).
+Client-specific context and tool guidance live in
+[adapters/claude/instructions.md](adapters/claude/instructions.md).
 
-## Instructions
+## Codex
 
-The five files in `instructions/` are always-on context. A project's `CLAUDE.md`
-pulls them in with `@import`. Pick one of the two delivery options below; both
-end with `CLAUDE.md` importing the same file set.
-
-The first time Claude Code sees an external import in a project it shows a
-one-time approval dialog listing the files.
-
-### Option A — import from a local clone
-
-Clone this repository once per machine to a stable, home-relative path (next to
-your other packages), then import from it. Recommended when you mostly work solo
-across several computers: one `git pull` updates the instructions for every
-project at once.
+The Codex marketplace is **`agent-base`**, exposing the same `flutter-base` plugin.
+In a current local Codex CLI:
 
 ```bash
-git clone https://github.com/AlexSeednov/claude_base.git ~/Projects/Packages/claude_base
+codex plugin marketplace add AlexSeednov/agent_base --ref v0.2.0
+codex plugin add flutter-base@agent-base
 ```
 
-In each project's `CLAUDE.md`:
+The desktop plugin browser can also use the repository marketplace at
+`.agents/plugins/marketplace.json`. Where supported, install from that source
+and merge this into the trusted application's `.codex/config.toml`:
+
+```toml
+[plugins."flutter-base@agent-base"]
+enabled = true
+```
+
+Installed plugin contents come from a cache; editing the source checkout is not
+a live update of an installed plugin. Start a new session after installing or
+updating. Review and trust the plugin hooks in a supporting local client; enabling
+a plugin does not grant hook trust. These local scripts do not run in
+cloud-orchestrated Work.
+
+The Codex manifest selects [adapters/codex/hooks.json](adapters/codex/hooks.json).
+Configuration, tool discovery, and local-preference behavior are described in
+[adapters/codex/instructions.md](adapters/codex/instructions.md). Client versions
+differ; use the plugin browser if a listed CLI command is unavailable.
+
+## Skills and testing rules
+
+| Skill | When to use it |
+| --- | --- |
+| `dart-add-unit-test` | Isolated business logic and regression tests |
+| `flutter-add-widget-test` | Widget rendering, themes, localization, interactions |
+| `flutter-add-integration-test` | Complete flows with real application bootstrap |
+| `flutter-refactor-audit` | Read-only assessment of an existing feature/layer/slice |
+
+Skills read their shared references explicitly and consult application context.
+They do not assume flavors, devices, MCP connections, or a particular theme API.
+
+`package:checks`, test doubles/DI isolation, and coverage are common
+[testing rules](instructions/testing.md), not separate skills. The entrypoint
+routes coverage and test-double requests there too. Existing fake, assertion, and
+coverage behavior is retained without three overlapping discovery entries.
+
+## Optional Telegram notifications
+
+Requires **Node.js 20+**, with no npm dependencies, jq, curl, Bash scripts, or
+PowerShell scripts. Both adapters call [scripts/telegram.js](scripts/telegram.js).
+The client still needs its normal supported command-hook execution environment.
+
+Provide `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID` through the client process
+environment or private local client settings. Without either, notifications and
+prompt caching are disabled. This package does not install credentials or change
+global settings. Keep secret-bearing files out of Git.
+
+Project name resolution is `AGENT_PROJECT_NAME`, legacy `CLAUDE_PROJECT_NAME`,
+`name:` from `pubspec.yaml`, then the working-directory name. Examples:
 
 ```text
-@~/Projects/Packages/claude_base/instructions/global.md
-@~/Projects/Packages/claude_base/instructions/architecture.md
-@~/Projects/Packages/claude_base/instructions/dart-conventions.md
-@~/Projects/Packages/claude_base/instructions/packages.md
-@~/Projects/Packages/claude_base/instructions/layers.md
-
-@.claude/project.md
+✅ Codex: Example — Add board undo
+✅ Claude: Example — Add board undo
+❓ Codex: Example — Question
+⚠️ Claude: Example — Approval required
 ```
 
-Keep the clone path identical across your machines (and for teammates) so the
-`~/`-relative imports resolve everywhere. The project repository alone is not
-self-contained under this option — a fresh checkout needs the clone present.
+| Event | Behavior |
+| --- | --- |
+| `UserPromptSubmit` | Cache the first prompt's first nonempty line, up to 100 Unicode code points |
+| `PreToolUse` | Notify for the client's question tool when it uses that local hook path |
+| `PermissionRequest` | Notify about a real pending approval, without command text |
+| `Stop` | Notify when the client emits Stop, including a continued turn |
+| `SessionEnd` | Delete that session's cached title |
 
-### Option B — vendor via git subtree
+Titles are stored in the user's OS temporary directory, separated by client,
+session, and working directory. The notifier never parses transcripts or stores
+whole prompts. Normal session end removes the title; interrupted clients can
+leave a short temporary record until OS/user cleanup. If a title is unavailable,
+completion says `done`. Telegram receives the title preview in completion notices;
+omit credentials when notifications are not wanted.
 
-Embed a copy of this repository inside the project under `.claude/base/`, so a
-plain `git clone` of the project already contains the instructions (works for
-teammates and CI with no extra setup). The trade-off is that updates need a
-subtree pull plus a commit in each project, which also pins the instructions to a
-known version.
+Transport has a five-second total deadline. Invalid input or a delivery failure
+does not block the agent; diagnostics omit payloads and credential URLs. Hooks
+never approve or deny actions. No approval notification is expected when the
+client does not need an approval, and unsupported question surfaces cannot be
+detected by the local-tool hook.
 
-```bash
-# once, to add:
-git subtree add --prefix .claude/base \
-  https://github.com/AlexSeednov/claude_base.git main --squash
-```
+## Permissions and MCP
 
-In each project's `CLAUDE.md`:
+Permissions are per client and per project. Shared Git guidance is read-only;
+it does not configure a sandbox. This package does not copy `bypassPermissions`,
+disable approvals, or grant access to sibling projects. Select the needed access
+when configuring each consuming project.
 
-```text
-@.claude/base/instructions/global.md
-@.claude/base/instructions/architecture.md
-@.claude/base/instructions/dart-conventions.md
-@.claude/base/instructions/packages.md
-@.claude/base/instructions/layers.md
+Claude uses its settings JSON and MCP configuration. Codex uses trusted
+`.codex/config.toml` or private user configuration; local MCP entries belong under
+`mcp_servers`. Pass secret variable names from the environment or keep values
+in private settings. Do not commit tokens with portable examples.
 
-@.claude/project.md
-```
+Figma rules are [shared](instructions/figma.md); connection and tool namespaces
+are client-specific. Verify read/export and write capabilities independently.
+A mockup edit is complete when it is applied and verified in the real Figma file.
 
-> The skills refer to the instructions by file and section name (Dart
-> Conventions → *Singleton Pattern*), never by path: `CLAUDE.md` has already put
-> them in context, and a path would hold for one of the two options only. Either
-> option works with the skills as is.
+## Migration from 0.1.x
 
-## Telegram hooks
+Version 0.2.0 changes package layout and startup routing. Migrate a consuming
+project deliberately rather than only bumping a plugin version:
 
-The plugin ships two hooks that send a Telegram message:
+1. Update instruction checkout/subtree from `AlexSeednov/agent_base`; keep an
+   existing `.claude/base/` prefix if desired.
+2. Merge the appropriate entry templates and keep the project's existing context
+   location if moving it is unnecessary. Add the entrypoint and client adapter.
+3. Refresh the marketplace/plugin. Its root moved from `plugin/` to the repository
+   root; Claude identifiers are unchanged. An old registered marketplace may
+   retain its previous URL; update that source in the client.
+4. Remove references to `dart-checks-assertions`, `dart-collect-coverage`, and
+   `flutter-test-doubles`; their content is in `instructions/testing.md`.
+5. Replace calls to the old dispatcher and shell/PowerShell scripts with the new
+   adapter hooks. New defaults also notify on real permission requests.
+6. Reuse private Telegram variables, optionally rename `CLAUDE_PROJECT_NAME` to
+   `AGENT_PROJECT_NAME`, and verify hooks in the actual client.
+7. Start a new session and check which instructions, skills, and tools are active.
 
-- **`Stop`** — when a session finishes (`telegram-notify`). The message includes
-  the first user prompt as a session name.
-- **`PreToolUse`** with matcher `AskUserQuestion` — when Claude asks a clarifying
-  question and is waiting on you (`telegram-waiting`).
-
-`dispatch.js` is the entry point in both: it runs the `.sh` implementation on
-Unix and the `.ps1` on Windows, so one command string in `hooks.json` works on
-every platform.
-
-### Message format
-
-Every message opens with a status icon and the project name, so a phone showing
-several sessions at once stays readable:
-
-```
-✅ Claude: Stitchy — Convert the palette loader to a repository
-✅ Claude: Stitchy done          # session with no prompt to quote
-❓ Claude: Stitchy — Question
-⚠️ Claude: Stitchy — Approval: git push --force
-```
-
-Editing this format carries one constraint: the `.ps1` scripts must stay **pure
-ASCII** and build their glyphs from code points (`[char]0x2705`), as they do
-now. Windows PowerShell 5.1 reads a BOM-less script in the system ANSI codepage.
-A pasted literal glyph can decode there into a character that terminates the
-surrounding string, and the hook dies with a parser error. This is exactly what
-broke every Windows notification in 0.0.3. The `.sh` variants take literals
-as-is.
-
-### Project name
-
-`project-name.sh` / `.ps1` resolve the name, first match wins:
-
-1. the `CLAUDE_PROJECT_NAME` environment variable;
-2. `name:` from `pubspec.yaml` in the session's working directory;
-3. the name of that directory;
-4. `Unknown project`.
-
-Steps 2–3 need no setup at all. The variable is for when the package or folder
-name is not what you want to read on your phone (`cross_stitch` → `Stitchy`).
-Set it in the `env` block of the project's `.claude/settings.local.json`:
-
-```json
-{
-  "env": {
-    "CLAUDE_PROJECT_NAME": "Stitchy"
-  }
-}
-```
-
-### Credentials
-
-The scripts read two environment variables and contain **no secrets**:
-
-- `TELEGRAM_BOT_TOKEN`
-- `TELEGRAM_CHAT_ID`
-
-If either is missing, every hook silently passes through and never blocks the
-session. Set them once per machine in the `env` block of your user settings
-(`~/.claude/settings.json`) or, if you prefer to keep them out of a shared file,
-in a project's gitignored `.claude/settings.local.json`:
-
-```json
-{
-  "env": {
-    "TELEGRAM_BOT_TOKEN": "…",
-    "TELEGRAM_CHAT_ID": "…"
-  }
-}
-```
-
-Never commit the token. Keep it in a gitignored or user-level settings file.
-
-### Optional: also notify before dangerous shell commands
-
-`telegram-waiting` also knows how to notify before a risky `Bash` command
-(`rm`, `git push --force`, `--no-verify`, …), but the shipped matcher only covers
-`AskUserQuestion`. To enable the Bash path, add `|Bash` to the `PreToolUse`
-matcher in `plugin/hooks/hooks.json`:
-
-```json
-{ "matcher": "AskUserQuestion|Bash", "hooks": [ /* … */ ] }
-```
-
-## Skills
-
-All skills auto-load once the plugin is installed and appear as
-`flutter-base:<name>`.
-
-| Skill                          | Purpose                                                                            |
-| ------------------------------ | ---------------------------------------------------------------------------------- |
-| `dart-add-unit-test`           | Unit tests for pure-Dart domain/core logic; DI via the `@visibleForTesting` ctor.  |
-| `dart-checks-assertions`       | Prefer `package:checks` (`check(x).equals(y)`) over raw `expect`/matchers.          |
-| `dart-collect-coverage`        | Collect LCOV coverage, excluding generated code.                                    |
-| `flutter-add-widget-test`      | Component/widget tests with `WidgetTester` and `ValueListenableBuilder`-driven UI.  |
-| `flutter-add-integration-test` | End-to-end flows with `integration_test` across flavors.                            |
-| `flutter-refactor-audit`       | Audit committed code: layer violations, duplication, dead code, convention breaches. Re-verifies findings, answers with a must-do and a worth-doing list. |
-| `flutter-test-doubles`         | Test doubles and getIt/injectable wiring; prefer fakes over mocks.                  |
-
-## Singletons and dependency injection
-
-This is the canonical reference that `instructions/dart-conventions.md` points to.
-
-Singleton lifetime is owned by **getIt** (`@lazySingleton` / `@singleton`), never
-a manual `static final _instance`. Dependencies come through the **constructor**
-(constructor injection), not `getIt<T>()` calls in the body. The constructor is
-marked `@visibleForTesting`: outside tests the analyzer forbids creating a second
-instance, while a test builds an isolated instance with fakes. `getIt.reset()`
-genuinely recreates the object between tests, so no state leaks.
-
-```dart
-/// First-level model: owns one domain area through its repository.
-@lazySingleton
-final class AccountModel {
-  /// Constructor injection. @visibleForTesting so the analyzer blocks a second
-  /// instance in app code, while a test can build an isolated one with fakes.
-  @visibleForTesting
-  AccountModel(this._repository);
-
-  /// Contract from the domain layer; the concrete impl is bound in the data
-  /// layer via @LazySingleton(as: AccountRepository) and injected by codegen.
-  final AccountRepository _repository;
-
-  /// UI-facing state; views listen via ValueListenableBuilder.
-  final ValueNotifier<AccountEntity?> account = ValueNotifier(null);
-
-  /// Async setup after the first frame (addPostFrameCallback).
-  Future<void> prepare(Duration timeStamp) async {
-    account.value = await _repository.fetchAccount();
-  }
-}
-```
-
-- `@lazySingleton` is lazy, `@singleton` is eager. Registration is generated into
-  `service_locator.config.dart` — never register manually.
-- Do **not** use the legacy `_instance` + `factory .singleton()` pattern: dual
-  control over the lifecycle (static + getIt) leaks state between tests.
-- Services from `application_base`, `firebase_base` and `metrica_base` are
-  injectable (external injectable modules wired into `@InjectableInit`) — take
-  them via the constructor or via `getIt<T>()`. A dependency registered **outside** codegen
-  (manual registration) cannot be constructor-injected — take it via `getIt<T>()`
-  in the method body.
-
-In a test, reset getIt, register fakes, then build the model through its
-`@visibleForTesting` constructor:
-
-```dart
-setUp(() {
-  getIt.reset();
-  final repository = FakeAccountRepository();
-  getIt.registerSingleton<AccountRepository>(repository);
-  model = AccountModel(repository);
-});
-```
-
-## Versioning
-
-Use **semantic versioning with git tags**, the same convention as the other
-packages on this stack (`application_base`, `firebase_base`, `metrica_base`).
-This is the recommended answer to "tags, version branches, or changelog?":
-**tags plus a changelog on a single `main` branch — not version-named
-branches.**
-
-Three things move together on each release:
-
-1. **`version` in `plugin/.claude-plugin/plugin.json`** — Claude Code resolves the
-   plugin version from this field and uses it for update detection: `/plugin
-   update` only pulls when the string changes. Bump it on every release. Set the
-   version in `plugin.json` only, not in the marketplace entry: the manifest
-   value silently wins, so a version bumped in the marketplace entry alone
-   would be ignored.
-2. **A git tag `vMAJOR.MINOR.PATCH`** — an immutable release marker, matching the
-   other packages. It lets a project pin the marketplace or a subtree to an exact
-   ref when needed.
-3. **A `CHANGELOG.md` entry** — the human-readable history.
-
-What the numbers mean for this repository:
-
-| Bump      | When                                                                                                   |
-| --------- | ------------------------------------------------------------------------------------------------------ |
-| **MAJOR** | Breaking change: a convention/architecture rule that forces edits in projects, or removing/renaming a skill or hook (which breaks `enabledPlugins` keys and references). |
-| **MINOR** | Additive: a new skill, a new instruction section, a new hook.                                           |
-| **PATCH** | Wording fixes and script bug fixes with no behavioral change for consumers.                             |
-
-The instruction files are versioned by the same tags, since they live in the same
-repository. Option A (local clone) tracks whatever branch/tag the clone is on;
-Option B (subtree) pins each project to the commit it vendored.
-
-**Alternative — rolling / commit-SHA versioning.** During heavy churn you can omit
-the `version` field entirely; Claude Code then treats every commit as a new
-version and `/plugin update` always pulls `main`. It is the lowest-ceremony
-setup, but gives no named releases or pinning. Prefer tagged semver once the base
-stabilizes, so releases are traceable like your other packages.
-
-Avoid version-named branches. Release channels in Claude Code are built from
-distinct resolved versions (tags/SHAs), not branch names, and add complexity that
-a solo/small-team base does not need.
+No application or user-level configuration is migrated automatically. The
+published 0.1.x tags keep their original contents. Keep historical release notes
+unchanged even where they refer to the former repository name.
 
 ## Updating
 
-Two independent things move, and **each needs its own step** — the plugin update
-never carries instructions, because `instructions/` is imported by `CLAUDE.md`
-and lives outside the plugin.
-
-**Skills and hooks** — once per machine, after a new release is pushed:
+Refresh the Claude marketplace and plugin separately from project instructions:
 
 ```text
 /plugin marketplace update claude-base
 /plugin update flutter-base@claude-base
 ```
 
-**Instructions** — depends on which option the project uses:
+Refresh the Codex marketplace, then update/reinstall the plugin in the client
+plugin browser. If the source is pinned, select the new release ref first:
 
-- **Option A (local clone):** `git pull` in `~/Projects/Packages/claude_base` —
-  every project that imports from it follows immediately.
-- **Option B (subtree):** one command per project, from its root:
+```bash
+codex plugin marketplace upgrade agent-base
+```
 
-  ```bash
-  GIT_MERGE_AUTOEDIT=no git subtree pull --prefix .claude/base \
-    https://github.com/AlexSeednov/claude_base.git main --squash -m "Claude Base update"
-  ```
+For a subtree, use its actual prefix and the target release tag. This example
+targets 0.2.0; choose the next tag on a later update:
 
-  It commits by itself — nothing to do afterwards. `GIT_MERGE_AUTOEDIT=no` and
-  `-m` are what keep it to a single command: `git subtree` shells out to a plain
-  `git merge --no-ff`, which without them opens `$EDITOR` on a merge message that
-  is already filled in. (If you land in `vim` anyway: `Esc`, then `:wq`, Enter.)
+```bash
+GIT_MERGE_AUTOEDIT=no git subtree pull --prefix .agents/base \
+  https://github.com/AlexSeednov/agent_base.git v0.2.0 --squash -m "Agent Base v0.2.0"
+```
 
-Either way, **restart the Claude session** afterwards — `CLAUDE.md` imports are
-read once at session start, so a running session keeps the old text.
+For local-clone delivery, the user pulls or selects the required tag in that
+clone. That immediately affects every project that reads its files. The agent
+provides Git write commands; the user executes them. Restart the session.
 
-## Adding to the base
+## Versioning and validation
 
-- **A new skill:** create `plugin/skills/<name>/SKILL.md` with `name` and
-  `description` frontmatter. It auto-loads on the next session after the plugin
-  updates.
-- **A new instruction rule:** edit a file in `instructions/`, or add a new file
-  and reference it from consuming `CLAUDE.md` files.
-- **A new hook:** add the implementation under `plugin/scripts/` and wire it in
-  `plugin/hooks/hooks.json` using `${CLAUDE_PLUGIN_ROOT}` for the path.
+Use one release version in `.claude-plugin/plugin.json` and
+`.codex-plugin/plugin.json`, an English `CHANGELOG.md` entry, and a matching
+`vMAJOR.MINOR.PATCH` tag. In 0.x, a minor bump can carry breaking layout/rule
+changes. Keep stable plugin/marketplace identifiers distinct from repository
+branding. The user performs commits, pushes, and tags.
 
-Then bump the version, add a `CHANGELOG.md` entry, commit, tag, and push. Run
-`claude plugin validate ./plugin` to check the manifest, skill/hook frontmatter,
-and `hooks.json` before publishing.
+Keep `README.md` and `README.ru.md` synchronized, including identical code blocks.
+Run from the package root:
 
-Keep everything in this repository in **English**, and free of any single
-project's names or details — those belong in the consuming project, not the base.
-The one exception is `README.ru.md`, the Russian translation of this README: it
-changes together with it, in the same edit (Global → *Package READMEs: Two
-Languages*).
+```bash
+node scripts/validate.js
+node --test test/*.test.js
+```
+
+Validation checks manifests, paths, links, versions, hooks, skill metadata, and
+README code-block parity. Tests exercise notification behavior with fake
+transport and isolated temporary directories; they send no real messages.
+If Claude Code is installed, also run `claude plugin validate .`. Native
+installation, hook trust, connected tools, and delivery must be verified in the
+target client after setup.
+
+Sources: [OpenAI plugin packaging](https://developers.openai.com/plugins/build/plugins),
+[Codex instructions](https://learn.chatgpt.com/docs/agent-configuration/agents-md),
+[Codex hooks](https://learn.chatgpt.com/docs/hooks),
+[Claude plugin reference](https://code.claude.com/docs/en/plugins-reference),
+[Claude hooks](https://code.claude.com/docs/en/hooks).

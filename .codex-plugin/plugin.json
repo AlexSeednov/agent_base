@@ -1,0 +1,13 @@
+{
+  "name": "flutter-base",
+  "version": "0.2.0",
+  "description": "Shared Flutter/Dart conventions, testing and refactor-audit skills, with optional Telegram notifications.",
+  "author": {
+    "name": "Alex Seednov"
+  },
+  "homepage": "https://github.com/AlexSeednov/agent_base",
+  "repository": "https://github.com/AlexSeednov/agent_base",
+  "license": "MIT",
+  "skills": "./skills/",
+  "hooks": "./adapters/codex/hooks.json"
+}

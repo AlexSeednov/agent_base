@@ -110,9 +110,8 @@ ones **at the end**, never reorder or delete.
 
 ## Singleton Pattern
 
-> The canonical pattern (with a code example) lives in the `claude_base` README,
-> section "Singletons and dependency injection". Below is the working summary; the
-> README wins on any conflict.
+This section is the canonical singleton pattern for this stack. Tests use the
+same constructor; see [Testing](testing.md).
 
 Singleton lifetime is owned by **getIt** (`@lazySingleton`/`@singleton`), not a manual
 `static final _instance`. Dependencies come through the **constructor** (constructor

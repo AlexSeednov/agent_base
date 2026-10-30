@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
+  "name": "flutter-base",
+  "displayName": "Flutter Base",
+  "version": "0.2.0",
+  "description": "Shared Flutter/Dart conventions, testing and refactor-audit skills, with optional Telegram notifications.",
+  "author": {
+    "name": "Alex Seednov"
+  },
+  "homepage": "https://github.com/AlexSeednov/agent_base",
+  "repository": "https://github.com/AlexSeednov/agent_base",
+  "license": "MIT",
+  "keywords": ["flutter", "dart", "testing", "refactoring", "clean-architecture", "get-it", "hooks"],
+  "hooks": "./adapters/claude/hooks.json"
+}

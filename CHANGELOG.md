@@ -5,6 +5,54 @@ All notable changes to this repository are documented here. The format follows
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html). See the README,
 section "Versioning", for what MAJOR / MINOR / PATCH mean here.
 
+## [0.2.0]
+
+### Changed
+
+- Evolved `claude_base` into `agent_base`, a shared Flutter/Dart instruction and
+  workflow package for Claude Code and Codex. The repository root is now the
+  plugin root; Claude's `claude-base` marketplace and `flutter-base` plugin
+  identifiers remain stable.
+- Split common engineering rules from client adapters. A shared entrypoint loads
+  core rules and routes detailed Dart, testing, Figma, web, and maintenance
+  references by task. Added application entry/context templates and separate
+  maintainer instructions for this tooling repository.
+- Made test and audit workflows self-contained and independent of client tool
+  names, preloaded context, hardcoded flavors, and example-specific APIs.
+  Consolidated assertions, test doubles, and coverage into shared testing rules;
+  four task-specific skills remain.
+- Resolved contradictory shared wording: domain models may use Flutter
+  foundation's ValueNotifier as the existing stack requires, while domain
+  entities/contracts/utilities stay free of Flutter UI dependencies. Enums live
+  in their owning enum folder rather than among constants.
+- Replaced duplicated Unix/PowerShell notification scripts and their dispatcher
+  with one dependency-free Node.js implementation for both clients. It records
+  only a short first-prompt title through lifecycle events, never parses client
+  transcripts, uses real permission-request events, and applies a bounded
+  non-blocking Telegram transport.
+- Rewrote both READMEs with matching installation, migration, update, credential,
+  and validation guidance. Package changes do not migrate consuming projects or
+  user-level settings automatically.
+
+### Added
+
+- Codex plugin manifest and `agent-base` marketplace, alongside the preserved
+  Claude manifest/marketplace identity and client-specific hook configurations.
+- Package validation for versions, manifests, paths, skill metadata, hooks,
+  Markdown links, JavaScript syntax, and bilingual README code-block parity.
+- Offline notification tests covering client/session isolation, Unicode, real
+  approvals, disabled credentials, cleanup, delivery deadlines, and fail-open
+  behavior without sending real messages.
+
+### Removed
+
+- The `dart-checks-assertions`, `dart-collect-coverage`, and
+  `flutter-test-doubles` skills; their useful content is in
+  `instructions/testing.md`.
+- The old `plugin/` layout, platform-specific hook scripts, transcript parsers,
+  heuristic dangerous-command notifications, and shared instructions that
+  assumed Claude-only tools or commands were installed.
+
 ## [0.1.8]
 
 ### Fixed
